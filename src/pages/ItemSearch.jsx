@@ -55,11 +55,18 @@ const ItemSearch = () => {
     }
   };
 
+  // const handleQRResult = (scannedCode) => {
+  //   setItemCode(scannedCode);
+  //   setShowQR(false);
+  //   handleSearch(scannedCode);
+  // };
+
   const handleQRResult = (scannedCode) => {
-    setItemCode(scannedCode);
-    setShowQR(false);
-    handleSearch(scannedCode);
-  };
+  setItemCode(scannedCode);
+  setShowQR(false);   // <-- Close the modal immediately after a successful scan
+  handleSearch(scannedCode);
+};
+
 
   return (
     <>
@@ -151,13 +158,22 @@ const ItemSearch = () => {
           </Col>
         </Row>
 
-        {showQR && (
+        {/* {showQR && (
           <QRScanner
             locCode={locationId}
             onScan={handleQRResult}
             onClose={() => setShowQR(false)}
           />
-        )}
+        )} */}
+
+        {showQR && (
+  <QRScanner
+    locCode={locationId}
+    onScan={handleQRResult}
+    onClose={() => setShowQR(false)}
+  />
+)}
+
       </Container>
     </>
   );
