@@ -61,11 +61,26 @@ const ItemSearch = () => {
   //   handleSearch(scannedCode);
   // };
 
-  const handleQRResult = (scannedCode) => {
-  setItemCode(scannedCode);
-  setShowQR(false);   // <-- Close the modal immediately after a successful scan
-  handleSearch(scannedCode);
+    const handleQRResult = async (scannedCode) => {
+  setShowQR(false);  // Close scanner modal
+
+  try {
+    // Call backend API to check if scannedCode belongs to the store
+    const response = await searchItem(scannedCode, locationId); // Pass scannedCode + store locCode
+
+    if (response.data?.dataSet?.data?.length > 0) {
+      setResults(response.data.dataSet.data);
+      setError('');
+    } else {
+      setResults([]);
+      setError('No matching records found for scanned code.');
+    }
+  } catch (err) {
+    console.error('Error fetching item data:', err);
+    setError('Failed to fetch data for scanned code.');
+  }
 };
+
 
 
   return (
@@ -158,22 +173,15 @@ const ItemSearch = () => {
           </Col>
         </Row>
 
-        {/* {showQR && (
+         {showQR && (
           <QRScanner
             locCode={locationId}
             onScan={handleQRResult}
             onClose={() => setShowQR(false)}
           />
-        )} */}
+        )} 
 
-        {showQR && (
-  <QRScanner
-   
-    onScan={handleQRResult}
-    onClose={() => setShowQR(false)}
-  />
-)}
-
+      
       </Container>
     </>
   );
