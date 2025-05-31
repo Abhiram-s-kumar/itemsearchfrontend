@@ -179,9 +179,19 @@ const ItemSearch = () => {
           </Col>
         </Row>
 
-        {showQR && (
+        {/* {showQR && (
           <QRScanner onScan={handleQRResult} onClose={() => setShowQR(false)} />
-        )}
+        )} */}
+
+
+        {showQR && (
+  <QRScanner
+    locCode={locationId}     // pass logged-in user's locCode
+    onScan={handleQRResult}
+    onClose={() => setShowQR(false)}
+  />
+)}
+
       </Container>
     </>
   );
