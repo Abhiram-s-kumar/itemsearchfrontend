@@ -12,12 +12,11 @@ import {
 } from 'react-bootstrap';
 import dayjs from 'dayjs';
 
-import { searchItem } from '../utils/api'; // Your API call helper
-
+import { searchItem } from '../utils/api'; // Your API helper
 import { getSession } from '../utils/session'; // Get logged-in user session
-import QRScanner from '../componenets/QrScanner';
+ // Make sure file name matches exactly
 import Header from '../componenets/Header';
-
+import QRScanner from '../componenets/QrScanner';
 
 const ItemSearch = () => {
   const session = getSession();
@@ -25,16 +24,19 @@ const ItemSearch = () => {
 
   const [itemCode, setItemCode] = useState('');
   const [results, setResults] = useState([]);
+  const [scannedResults, setScannedResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showQR, setShowQR] = useState(false);
 
+  // Search API call, accepts item code (default from input)
   const handleSearch = async (code = itemCode) => {
     if (!code.trim()) {
       setError('Please enter or scan a valid item code.');
       setResults([]);
       return;
     }
+
     setError('');
     setLoading(true);
     setResults([]);
@@ -47,45 +49,54 @@ const ItemSearch = () => {
         setResults(data);
       } else {
         setError('No records found for the scanned item in your location.');
+        setResults([]);
       }
     } catch (err) {
       setError('Failed to fetch item data. Please try again.');
+      setResults([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // const handleQRResult = (scannedCode) => {
-  //   setItemCode(scannedCode);
-  //   setShowQR(false);
-  //   handleSearch(scannedCode);
-  // };
+  // Called when QR scanner scans a code
+  const handleQRResult = async (scannedCode) => {
+    setShowQR(false);
+    setItemCode(scannedCode);
+    setError('');
+    setResults([]); // Clear visible results
 
-    const handleQRResult = async (scannedCode) => {
-  setShowQR(false);  // Close scanner modal
+    try {
+      const response = await searchItem(scannedCode, locationId);
 
-  try {
-    // Call backend API to check if scannedCode belongs to the store
-    const response = await searchItem(scannedCode, locationId); // Pass scannedCode + store locCode
-
-    if (response.data?.dataSet?.data?.length > 0) {
-      setResults(response.data.dataSet.data);
-      setError('');
-    } else {
-      setResults([]);
-      setError('No matching records found for scanned code.');
+      if (response.data?.dataSet?.data?.length > 0) {
+        setScannedResults(response.data.dataSet.data); // Store scanned results silently
+      } else {
+        setScannedResults([]);
+        setError('No matching records found for scanned code.');
+      }
+    } catch (err) {
+      setError('Failed to fetch data for scanned code.');
+      setScannedResults([]);
     }
-  } catch (err) {
-    console.error('Error fetching item data:', err);
-    setError('Failed to fetch data for scanned code.');
-  }
-};
+  };
 
-
+  // On user clicking Search button, show either scannedResults or search by manual input
+  const onSearchButtonClick = () => {
+    if (scannedResults.length > 0) {
+      setResults(scannedResults);
+      setError('');
+    } else if (itemCode.trim()) {
+      handleSearch(itemCode);
+    } else {
+      setError('Please enter or scan an item code first.');
+      setResults([]);
+    }
+  };
 
   return (
     <>
-      <Header/>
+      <Header />
       <Container fluid className="py-5 bg-light min-vh-100">
         <Row className="justify-content-center">
           <Col xs={11} md={10} lg={8}>
@@ -108,26 +119,34 @@ const ItemSearch = () => {
                     </Form.Group>
                   </Col>
 
-                  <Col xs={6} md={2} className="d-flex flex-column align-items-center">
+                  <Col
+                    xs={6}
+                    md={2}
+                    className="d-flex flex-column align-items-center"
+                  >
                     <Button
                       variant="outline-success"
                       onClick={() => setShowQR(true)}
                       className="w-100 d-flex justify-content-center align-items-center"
                       title="Scan QR"
                     >
-                      <i className="fa-solid fa-qrcode me-2"></i> QR
+                      <i className="fa-solid fa-qrcode me-2"></i> Scan QR
                     </Button>
-                    <small className="mt-1 text-muted">Scan QR</small>
+                    
                   </Col>
 
                   <Col xs={6} md={2}>
                     <Button
                       variant="outline-success"
-                      onClick={() => handleSearch()}
+                      onClick={onSearchButtonClick}
                       className="w-100"
                       disabled={loading || !itemCode.trim()}
                     >
-                      {loading ? <Spinner size="sm" animation="border" /> : 'Search'}
+                      {loading ? (
+                        <Spinner size="sm" animation="border" />
+                      ) : (
+                        'Search'
+                      )}
                     </Button>
                   </Col>
                 </Form>
@@ -140,7 +159,12 @@ const ItemSearch = () => {
 
                 {results.length > 0 && (
                   <div className="mt-4 table-responsive">
-                    <Table bordered hover className="text-center align-middle">
+                    <Table
+                      bordered
+                      hover
+                      className="text-center align-middle"
+                      responsive
+                    >
                       <thead className="table-success">
                         <tr>
                           <th>#</th>
@@ -156,9 +180,21 @@ const ItemSearch = () => {
                         {results.map((item, index) => (
                           <tr key={index}>
                             <td>{index + 1}</td>
-                            <td>{item.deliveryDate ? dayjs(item.deliveryDate).format('D/MMM/YYYY') : '-'}</td>
-                            <td>{item.bookingDate ? dayjs(item.bookingDate).format('D/MMM/YYYY') : '-'}</td>
-                            <td>{item.returnDate ? dayjs(item.returnDate).format('D/MMM/YYYY') : '-'}</td>
+                            <td>
+                              {item.deliveryDate
+                                ? dayjs(item.deliveryDate).format('D/MMM/YYYY')
+                                : '-'}
+                            </td>
+                            <td>
+                              {item.bookingDate
+                                ? dayjs(item.bookingDate).format('D/MMM/YYYY')
+                                : '-'}
+                            </td>
+                            <td>
+                              {item.returnDate
+                                ? dayjs(item.returnDate).format('D/MMM/YYYY')
+                                : '-'}
+                            </td>
                             <td>{item.description || '-'}</td>
                             <td>{item.customerName || '-'}</td>
                             <td>{item.phoneNo || '-'}</td>
@@ -173,15 +209,13 @@ const ItemSearch = () => {
           </Col>
         </Row>
 
-         {showQR && (
+        {showQR && (
           <QRScanner
             locCode={locationId}
             onScan={handleQRResult}
             onClose={() => setShowQR(false)}
           />
-        )} 
-
-      
+        )}
       </Container>
     </>
   );
