@@ -48,7 +48,7 @@ import React, { useEffect } from 'react';
 import { Modal, Button } from 'react-bootstrap';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 
-const QrScanner = ({ onScan, onClose, locCode }) => {
+const QRScanner = ({ onScan, onClose, locCode }) => {
   useEffect(() => {
     const scanner = new Html5QrcodeScanner('reader', { fps: 10, qrbox: 250 });
     scanner.render(
@@ -106,6 +106,6 @@ const QrScanner = ({ onScan, onClose, locCode }) => {
   );
 };
 
-export default QrScanner;
+export default QRScanner;
 
 

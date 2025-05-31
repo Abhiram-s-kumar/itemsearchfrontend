@@ -10,42 +10,46 @@ import {
   Alert,
   Card,
 } from 'react-bootstrap';
-import { getSession } from '../utils/session';
-import { searchItem } from '../utils/api';
-import QRScanner from '../componenets/QrScanner';
 import dayjs from 'dayjs';
+
+import { searchItem } from '../utils/api'; // Your API call helper
+
+import { getSession } from '../utils/session'; // Get logged-in user session
+import QRScanner from '../componenets/QrScanner';
 import Header from '../componenets/Header';
+
 
 const ItemSearch = () => {
   const session = getSession();
+  const locationId = session?.locCode || '';
+
   const [itemCode, setItemCode] = useState('');
-  const locationId = session?.locCode || ''; // Location is fixed from session
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showQR, setShowQR] = useState(false);
 
-  const handleSearch = async () => {
+  const handleSearch = async (code = itemCode) => {
+    if (!code.trim()) {
+      setError('Please enter or scan a valid item code.');
+      setResults([]);
+      return;
+    }
     setError('');
     setLoading(true);
     setResults([]);
 
     try {
-      const res = await searchItem(itemCode.trim(), parseInt(locationId));
+      const res = await searchItem(code.trim(), locationId);
+      const data = res.data?.dataSet?.data || [];
 
-      const resultsArray = res.data?.dataSet?.data || [];
-
-      console.log('🔍 API Response:', res.data);
-      console.log('📦 Parsed Results Array:', resultsArray);
-
-      if (resultsArray.length > 0) {
-        setResults(resultsArray);
+      if (data.length > 0) {
+        setResults(data);
       } else {
-        setError('No records found.');
+        setError('No records found for the scanned item in your location.');
       }
     } catch (err) {
-      console.error('Search error:', err);
-      setError('Error fetching item data.');
+      setError('Failed to fetch item data. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -54,12 +58,12 @@ const ItemSearch = () => {
   const handleQRResult = (scannedCode) => {
     setItemCode(scannedCode);
     setShowQR(false);
-    handleSearch();
+    handleSearch(scannedCode);
   };
 
   return (
     <>
-      <Header />
+      <Header/>
       <Container fluid className="py-5 bg-light min-vh-100">
         <Row className="justify-content-center">
           <Col xs={11} md={10} lg={8}>
@@ -78,7 +82,6 @@ const ItemSearch = () => {
                         placeholder="Enter Item Code"
                         value={itemCode}
                         onChange={(e) => setItemCode(e.target.value)}
-                        required
                       />
                     </Form.Group>
                   </Col>
@@ -89,39 +92,18 @@ const ItemSearch = () => {
                       onClick={() => setShowQR(true)}
                       className="w-100 d-flex justify-content-center align-items-center"
                       title="Scan QR"
-                    
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = '#198754';
-                        e.currentTarget.style.color = 'white';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = 'transparent';
-                        e.currentTarget.style.color = '';
-                      }}
                     >
-                      <i className="fa-solid fa-qrcode me-2"></i>Scan QR
+                      <i className="fa-solid fa-qrcode me-2"></i> QR
                     </Button>
-                    
+                    <small className="mt-1 text-muted">Scan QR</small>
                   </Col>
 
                   <Col xs={6} md={2}>
                     <Button
                       variant="outline-success"
-                      onClick={handleSearch}
+                      onClick={() => handleSearch()}
                       className="w-100"
                       disabled={loading || !itemCode.trim()}
-                      style={{
-                        backgroundColor: 'transparent',
-                        transition: '0.3s',
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = '#198754';
-                        e.currentTarget.style.color = 'white';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = 'transparent';
-                        e.currentTarget.style.color = '';
-                      }}
                     >
                       {loading ? <Spinner size="sm" animation="border" /> : 'Search'}
                     </Button>
