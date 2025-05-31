@@ -168,7 +168,7 @@ const ItemSearch = () => {
 
         {showQR && (
   <QRScanner
-    locCode={locationId}
+   
     onScan={handleQRResult}
     onClose={() => setShowQR(false)}
   />

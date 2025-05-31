@@ -115,7 +115,7 @@ import React, { useEffect, useRef } from 'react';
 import { Modal, Button } from 'react-bootstrap';
 import { BrowserMultiFormatReader } from '@zxing/library';
 
-const ZXingQRScanner = ({ onScan, onClose, locCode }) => {
+const ZXingQRScanner = ({ onScan, onClose}) => {
   const videoRef = useRef(null);
   const codeReader = useRef(null);
 
@@ -170,7 +170,7 @@ const ZXingQRScanner = ({ onScan, onClose, locCode }) => {
         codeReader.current.reset();
       }
     };
-  }, [onScan, locCode]);
+  }, [onScan]);
 
   return (
     <Modal show centered size="lg" onHide={onClose}>
