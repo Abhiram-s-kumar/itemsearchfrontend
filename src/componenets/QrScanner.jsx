@@ -2,21 +2,38 @@ import React, { useEffect } from 'react';
 import { Modal, Button } from 'react-bootstrap';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 
-const QrScanner = ({ onScan, onClose }) => {
+const QrScanner = ({ onScan, onClose, locCode }) => {
   useEffect(() => {
     const scanner = new Html5QrcodeScanner('reader', { fps: 10, qrbox: 250 });
     scanner.render(
       (decodedText) => {
-        scanner.clear();
-        onScan(decodedText);
+        // Assuming decodedText contains JSON or a string with locCode info
+        let data;
+        try {
+          data = JSON.parse(decodedText); // parse if JSON
+        } catch {
+          data = decodedText; // treat as plain string if not JSON
+        }
+
+        // Check if data has locCode matching user’s locCode
+        // Adjust this condition based on your QR code data structure
+        if (typeof data === 'object' && data.locCode === locCode) {
+          scanner.clear();
+          onScan(data);
+        } else if (typeof data === 'string' && data.includes(locCode)) {
+          scanner.clear();
+          onScan(data);
+        } else {
+          console.warn("Scanned data does not match user's store location");
+          // optionally notify user or ignore silently
+        }
       },
       (error) => {
-        // Optionally handle scan errors
         console.warn(error);
       }
     );
     return () => scanner.clear();
-  }, [onScan]);
+  }, [onScan, locCode]);
 
   return (
     <Modal show centered size="lg" onHide={onClose}>
@@ -41,5 +58,3 @@ const QrScanner = ({ onScan, onClose }) => {
 };
 
 export default QrScanner;
-
-
